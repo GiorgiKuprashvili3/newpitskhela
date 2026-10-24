@@ -13,6 +13,8 @@ const el = (tag, className, html) => {
   return n;
 };
 
+const escapeHtml = (s) => s.replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;');
+
 /**
  * A real 3D CSS book: front cover (hinged), back cover, spine, fore-edge,
  * top/bottom page edges, inside covers and a stack of blank pages.
@@ -36,17 +38,6 @@ export class Book {
     this.el.innerHTML = `
       <div class="book__shadow"></div>
       <div class="book__inner">
-        <div class="face face--back leather">
-          <div class="back__frame">
-            <div class="back__genre gold">${data.genre}</div>
-            <div class="back__rule"></div>
-            <h2 class="back__title gold">${data.title}</h2>
-            <div class="back__rule"></div>
-            <p class="back__text">${data.backText}</p>
-            <div class="back__barcode"></div>
-          </div>
-        </div>
-        <div class="face face--back-inside"></div>
         <div class="face face--spine leather">
           <div class="spine__band"></div>
           <div class="spine__rule"></div>
@@ -69,7 +60,26 @@ export class Book {
         <div class="face face--top"></div>
         <div class="face face--bottom"></div>
         <div class="pages">
-          ${Array.from({ length: PAGE_COUNT }, () => '<div class="page"></div>').join('')}
+          ${Array.from(
+            { length: PAGE_COUNT },
+            (_, i) => `<div class="page">
+            <div class="page__face page__face--front"><p class="page__text">${escapeHtml(this.pageText(i * 2))}</p></div>
+            <div class="page__face page__face--back"><p class="page__text">${escapeHtml(this.pageText(i * 2 + 1))}</p></div>
+          </div>`,
+          ).join('')}
+        </div>
+        <div class="cover cover--back">
+        <div class="face face--back leather">
+          <div class="back__frame">
+            <div class="back__genre gold">${data.genre}</div>
+            <div class="back__rule"></div>
+            <h2 class="back__title gold">${data.title}</h2>
+            <div class="back__rule"></div>
+            <p class="back__text">${data.backText}</p>
+            <div class="back__barcode"></div>
+          </div>
+        </div>
+        <div class="face face--back-inside"></div>
         </div>
         <div class="cover cover--front">
           <div class="face face--front leather"></div>
@@ -81,11 +91,27 @@ export class Book {
       shadow: this.el.querySelector('.book__shadow'),
       inner: this.el.querySelector('.book__inner'),
       cover: this.el.querySelector('.cover--front'),
+      coverBack: this.el.querySelector('.cover--back'),
+      edges: Array.from(this.el.querySelectorAll('.face--edge, .face--top, .face--bottom')),
       pages: Array.from(this.el.querySelectorAll('.page')),
     };
 
     this.fitType();
     this.setRestTransforms();
+  }
+
+  /**
+   * Placeholder text for one page side, taken from the book's own blurb
+   * (a different starting point per side). It is rendered blurred in CSS,
+   * so it reads as text but is not legible.
+   */
+  pageText(n) {
+    const words = this.data.backText.replace(/\s+/g, ' ').trim().split(' ').filter(Boolean);
+    if (!words.length) return '';
+    const start = (n * 37) % words.length;
+    const out = [];
+    for (let i = 0; i < 180; i++) out.push(words[(start + i) % words.length]);
+    return out.join(' ');
   }
 
   /** Font sizes derived from text length so titles/blurbs fit their faces. */
@@ -121,6 +147,7 @@ export class Book {
   setRestTransforms() {
     gsap.set(this.els.inner, this.rest);
     gsap.set(this.els.cover, { z: this.d / 2, rotationY: 0 });
+    gsap.set(this.els.coverBack, { z: -this.d / 2, rotationY: 0 });
     this.els.pages.forEach((p, i) => {
       p.style.setProperty('--curl', 0);
       gsap.set(p, { z: this.pageZ(i), rotationY: 0, scaleX: 1 });

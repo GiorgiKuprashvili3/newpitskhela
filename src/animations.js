@@ -53,10 +53,10 @@ export function pullOutTimeline(book, env) {
 
 /**
  * Click 2: the front cover swings open, blank pages flip one after another
- * with a curl, then the book closes and turns 180° to show the back cover.
+ * with a curl, and the back cover then swings shut over them like closing a book.
  */
 export function flipThroughTimeline(book) {
-  const { inner, cover, pages } = book.els;
+  const { inner, cover, coverBack, pages, edges } = book.els;
   const { x, scale } = book.centerTarget();
   const tl = gsap.timeline({ defaults: { ease: 'power2.inOut' } });
 
@@ -80,16 +80,26 @@ export function flipThroughTimeline(book) {
     t += STEP;
   });
 
-  // close everything again (last page first), then turn to the back cover
-  const close = t + 0.5;
-  tl.to(
-    pages,
-    { rotationY: 0, z: (i) => book.pageZ(i), duration: 0.45, stagger: { each: 0.035, from: 'end' } },
-    close,
-  )
-    .to(cover, { rotationY: 0, duration: 0.5 }, close + 0.3)
-    .to(inner, { x, duration: 0.5 }, close + 0.3)
-    .to(inner, { rotationY: 180, duration: 0.9, ease: 'power3.inOut' }, close + 0.85);
+  // The last leaf (the blank back cover) swings shut over the pages like
+  // closing a book, and the book slides to the centre. No page returns, and the
+  // whole book is never rotated: the back cover ends up facing the viewer.
+  const CLOSE = 1.0;
+  const closeAt = t + 0.25; // last page started at t - STEP and lands at t + 0.48
+  // the cream page-block edges would flash as a white strip while the book slides
+  // to the centre, so hide them for the swing and bring them back with the swap
+  tl.set(edges, { autoAlpha: 0 }, closeAt)
+    // first bring the cover to the same depth as the page stack, so that while it
+    // swings its hinge edge lines up with the pages (no sliver of paper beside it)
+    .to(coverBack, { z: book.d / 2 + 6, duration: 0.3, ease: 'power1.out' }, closeAt)
+    .to(coverBack, { rotationY: -180, duration: CLOSE, ease: 'power2.inOut' }, closeAt + 0.2)
+    .to(inner, { x: x + book.w * scale, duration: CLOSE, ease: 'power2.inOut' }, closeAt + 0.2)
+    // Closed book with the back cover on top looks exactly like the closed book
+    // turned 180°, so swap to that state invisibly (the return animation expects it).
+    .set(coverBack, { rotationY: 0, z: -book.d / 2 }, closeAt + 0.2 + CLOSE)
+    .set(cover, { rotationY: 0 }, closeAt + 0.2 + CLOSE)
+    .set(pages, { rotationY: 0, z: (i) => book.pageZ(i), scaleX: 1 }, closeAt + 0.2 + CLOSE)
+    .set(inner, { rotationY: 180, x }, closeAt + 0.2 + CLOSE)
+    .set(edges, { autoAlpha: 1 }, closeAt + 0.2 + CLOSE);
 
   return tl;
 }
