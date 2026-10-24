@@ -1,0 +1,41 @@
+<!doctype html>
+<html lang="ka">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>ჟანრები — ინტერაქტიული წიგნის თარო</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com" />
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+    <link
+      href="https://fonts.googleapis.com/css2?family=Noto+Serif+Georgian:wght@400;600;700&family=Noto+Sans+Georgian:wght@500;700&display=swap"
+      rel="stylesheet"
+    />
+    <link rel="stylesheet" href="/src/styles.css" />
+  </head>
+  <body>
+    <div class="app">
+      <!-- Fills the letterbox around the fixed-aspect stage -->
+      <div class="bg" aria-hidden="true"></div>
+
+      <!-- 1440×900 stage, scaled to fit the viewport -->
+      <main class="stage" id="stage">
+        <div class="stage__bg" aria-hidden="true">
+          <img class="stage__sharp" id="bgSharp" src="/assets/bg/library.jpg" alt="" />
+          <img class="stage__blur" src="/assets/bg/library-blur.jpg" alt="" />
+          <div class="stage__light"></div>
+          <div class="stage__shelf-shadow"></div>
+        </div>
+
+        <div class="shelf" id="shelf" aria-label="წიგნის თარო"></div>
+
+        <!-- Dim layer: above idle books, below the active one -->
+        <div class="dim" id="dim" aria-hidden="true"></div>
+      </main>
+
+      <p class="hint" id="hint">
+        დააწკაპუნეთ წიგნზე · <span class="hint__sub">Esc — დახურვა</span>
+      </p>
+    </div>
+    <script type="module" src="/src/main.js"></script>
+  </body>
+</html>
